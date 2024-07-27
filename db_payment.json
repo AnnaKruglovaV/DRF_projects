@@ -1,0 +1,51 @@
+[
+{
+  "model": "materials.course",
+  "pk": 1,
+  "fields": {
+    "name": "Аналитик",
+    "image": "",
+    "description": "Супер курс по аналитике"
+  }
+},
+{
+  "model": "materials.course",
+  "pk": 2,
+  "fields": {
+    "name": "Разработчик",
+    "image": "",
+    "description": "Крутой курс по разработке"
+  }
+},
+{
+  "model": "materials.course",
+  "pk": 3,
+  "fields": {
+    "name": "Дизайнер",
+    "image": "",
+    "description": "Лучший курс по дизайну"
+  }
+},
+{
+  "model": "materials.lesson",
+  "pk": 2,
+  "fields": {
+    "name": "Разработчик",
+    "course": null,
+    "description": "Очень крутой курс",
+    "image": "",
+    "link_to_video": null
+  }
+},
+{
+  "model": "materials.lesson",
+  "pk": 3,
+  "fields": {
+    "name": "Урок по разработке",
+    "course": null,
+    "description": "Курс по разработке",
+    "image": "",
+    "link_to_video": null
+  }
+}
+]
