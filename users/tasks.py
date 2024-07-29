@@ -10,4 +10,5 @@ User = get_user_model()
 @shared_task
 def periodic_block():
     User.objects.exclude(is_superuser=True).exclude(is_staff=True).filter(
-        last_login__lt=timezone.now() - timedelta(days=30)).update(is_active=False)
+        last_login__lt=timezone.now() - timedelta(days=30)
+    ).update(is_active=False)

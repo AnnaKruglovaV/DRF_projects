@@ -11,16 +11,14 @@ def create_product(course):
 
 def create_price(product, amount):
     return stripe.Price.create(
-        product=product.get('id'),
-        currency='rub',
-        unit_amount=int(amount) * 100
+        product=product.get("id"), currency="rub", unit_amount=int(amount) * 100
     )
 
 
 def create_session(price):
     session = stripe.checkout.Session.create(
-        success_url='http://localhost:8000/materials/courses/',
-        line_items=[{'price': price.get('id'), 'quantity': 1}],
-        mode='payment'
+        success_url="http://localhost:8000/materials/courses/",
+        line_items=[{"price": price.get("id"), "quantity": 1}],
+        mode="payment",
     )
-    return session.get('id'), session.get('url')
+    return session.get("id"), session.get("url")

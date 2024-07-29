@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from django_filters import rest_framework
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets, generics, filters
+from rest_framework import filters, generics, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,16 +10,18 @@ from rest_framework.views import APIView
 from materials import models, serializers
 from materials.models import Course, Lesson, Subscription
 from materials.paginators import CoursePagination, LessonPagination
-from materials.serializers import CourseSerializer, LessonSerializer, CourseDetailSerializer
-from materials.services import create_product, create_price, create_session
+from materials.serializers import (CourseDetailSerializer, CourseSerializer,
+                                   LessonSerializer)
+from materials.services import create_price, create_product, create_session
 from materials.tasks import send_notification
-from users.permissions import IsModerator, UserListOnly, IsOwner
+from users.permissions import IsModerator, IsOwner, UserListOnly
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     """
     Простой ViewSet-класс для вывода списка курсов.
     """
+
     queryset = Course.objects.all()
     pagination_class = CoursePagination
 
@@ -28,26 +30,29 @@ class CourseViewSet(viewsets.ModelViewSet):
         send_notification.delay(self.course.id)
 
     def get_serializer_class(self):
-        if self.action == 'retrieve':
+        if self.action == "retrieve":
             return CourseDetailSerializer
         return CourseSerializer
 
     def get_permissions(self):
-        if self.action == 'list':
+        if self.action == "list":
             self.permission_classes = [IsModerator | UserListOnly]
-        elif self.action == 'create':
+        elif self.action == "create":
             self.permission_classes = [~IsModerator]
-        elif self.action == 'destroy':
+        elif self.action == "destroy":
             self.permission_classes = [IsOwner]
         else:
             self.permission_classes = [IsOwner | IsModerator]
-        return [permission() for permission in [IsAuthenticated] + self.permission_classes]
+        return [
+            permission() for permission in [IsAuthenticated] + self.permission_classes
+        ]
 
 
 class LessonCreateAPIView(generics.CreateAPIView):
     """
     Базовый класс Generic-классов, отвечающий за создание сущности.
     """
+
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, ~IsModerator]
 
@@ -56,6 +61,7 @@ class LessonListAPIView(generics.ListAPIView):
     """
     Базовый класс Generic-классов, отвечающий за отображение списка сущностей.
     """
+
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsModerator | UserListOnly]
@@ -64,6 +70,7 @@ class LessonListAPIView(generics.ListAPIView):
 
 class LessonRetrieveAPIView(generics.RetrieveAPIView):
     """Базовый класс Generic-классов, отвечающий за отображение одной сущности."""
+
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsModerator | IsOwner]
@@ -73,6 +80,7 @@ class LessonUpdateAPIView(generics.UpdateAPIView):
     """
     Базовый класс Generic-классов, отвечающий за редактирование сущности.
     """
+
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsModerator | IsOwner]
@@ -82,6 +90,7 @@ class LessonDestroyAPIView(generics.DestroyAPIView):
     """
     Базовый класс Generic-классов, отвечающий за удаление сущности.
     """
+
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsOwner]
@@ -92,8 +101,8 @@ class PaymentListAPIView(generics.ListAPIView):
     serializer_class = serializers.PaymentSerializer
 
     filter_backends = [filters.OrderingFilter, rest_framework.DjangoFilterBackend]
-    filterset_fields = ['method', 'lesson', 'course']
-    ordering_fields = ['payment_date']
+    filterset_fields = ["method", "lesson", "course"]
+    ordering_fields = ["payment_date"]
     permission_classes = [IsAuthenticated]
 
 
@@ -102,7 +111,7 @@ class PaymentCreateAPIView(generics.CreateAPIView):
     queryset = models.Payment.objects.all()
 
     def perform_create(self, serializer):
-        payment = serializer.save(user=self.request.user, method='TRAN')
+        payment = serializer.save(user=self.request.user, method="TRAN")
         product = create_product(payment.course)
         price = create_price(product=product, amount=payment.amount)
         session_id, session_url = create_session(price)
@@ -118,43 +127,42 @@ class PaymentRetrieveAPIView(generics.RetrieveAPIView):
 
 class SubscriptionAPIView(APIView):
     @swagger_auto_schema(
-        responses={200: openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            description="response message, can contain \"subscribed\" or \"unsubscribed\"",
-            properties={
-                "message": openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description="string of response message",
-                    example="subscribed"
-                )
-            }
-
-        )
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                description='response message, can contain "subscribed" or "unsubscribed"',
+                properties={
+                    "message": openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                        description="string of response message",
+                        example="subscribed",
+                    )
+                },
+            )
         },
         request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT, description='course for altering subscription status',
+            type=openapi.TYPE_OBJECT,
+            description="course for altering subscription status",
             properties={
-                'course': openapi.Schema(
+                "course": openapi.Schema(
                     type=openapi.TYPE_STRING,
-                    description='course for subscription / unsubscription id',
-                    example="1"
+                    description="course for subscription / unsubscription id",
+                    example="1",
                 ),
-            }
+            },
         ),
-
     )
     def post(self, *args, **kwargs):
         user = self.request.user
-        course = get_object_or_404(Course.objects.filter(pk=self.request.data.get('course')))
-        subscription_data = {
-            'user': user,
-            'course': course
-        }
+        course = get_object_or_404(
+            Course.objects.filter(pk=self.request.data.get("course"))
+        )
+        subscription_data = {"user": user, "course": course}
         is_subscribed = Subscription.objects.filter(**subscription_data).exists()
         if is_subscribed:
             Subscription.objects.filter(**subscription_data).delete()
-            message = 'unsubscribed'
+            message = "unsubscribed"
         else:
             Subscription.objects.create(**subscription_data)
-            message = 'subscribed'
-        return Response({'message': message})
+            message = "subscribed"
+        return Response({"message": message})
