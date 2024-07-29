@@ -11,7 +11,9 @@ class YouTubeLinkOnlyValidator:
 
     def __call__(self, value):
         for field_name in self.fields:
-            field = value.get(field_name, '')
+            field = value.get(field_name, "")
             if self.regex.findall(field):
-                raise ValidationError('В учебном материале указан сторонний ресурс, '
-                                      'не соответствующий требованиям платформы.')
+                raise ValidationError(
+                    "В учебном материале указан сторонний ресурс, "
+                    "не соответствующий требованиям платформы."
+                )
