@@ -12,9 +12,7 @@ class LessonSerializer(ModelSerializer):
     class Meta:
         model = Lesson
         fields = "__all__"
-        validators = [
-            YouTubeLinkOnlyValidator(fields=["name", "description", "link_to_video"])
-        ]
+        validators = [YouTubeLinkOnlyValidator(fields=['name', 'description', 'link_to_video'])]
 
 
 class CourseDetailSerializer(ModelSerializer):
@@ -23,15 +21,15 @@ class CourseDetailSerializer(ModelSerializer):
     subscription = serializers.SerializerMethodField()
 
     def get_subscription(self, obj):
-        return obj.subscription.filter(user=self.context.get("request").user).exists()
+        return obj.subscription.filter(user=self.context.get('request').user).exists()
 
     def get_count_lesson_in_course(self, course):
         return Lesson.objects.filter(course=course).count()
 
     class Meta:
         model = Course
-        fields = ("name", "description", "image", "count_lesson_in_course", "lesson")
-        validators = [YouTubeLinkOnlyValidator(fields=["name", "description"])]
+        fields = ('name', 'description', 'image', 'count_lesson_in_course', 'lesson', "subscription",)
+        validators = [YouTubeLinkOnlyValidator(fields=['name', 'description'])]
 
 
 class CourseSerializer(ModelSerializer):
@@ -44,6 +42,9 @@ class CourseSerializer(ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    method = serializers.CharField(default=serializers.CreateOnlyDefault('TRAN'))
+
     class Meta:
         model = models.Payment
-        fields = "__all__"
+        fields = '__all__'
